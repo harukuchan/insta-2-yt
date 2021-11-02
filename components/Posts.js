@@ -1,37 +1,39 @@
+import { useEffect, useState } from "react";
 import Post from "./Post";
-
-const posts = [
-  {
-    id: "123",
-    username: "minhnghia",
-    userImg:
-      "https://tuoitrechinhphuc.com/wp-content/uploads/2020/12/con-meo-1.jpg",
-    img: "https://tuoitrechinhphuc.com/wp-content/uploads/2020/12/con-meo-1.jpg",
-    captions: "this is the ameo",
-  },
-  {
-    id: "456",
-    username: "minhnghia0910",
-    userImg:
-      "https://tuoitrechinhphuc.com/wp-content/uploads/2020/12/con-meo-1.jpg",
-    img: "https://tuoitrechinhphuc.com/wp-content/uploads/2020/12/con-meo-1.jpg",
-    captions:
-      "this is the ameo lorem this is the ameo lorem this is the ameo lorem this is the ameo lorem this is the ameo lorem this is the ameo lorem this is the ameo lorem this is the ameo lorem",
-  },
-];
+import { collection, onSnapshot, query, orderBy } from "@firebase/firestore";
+import { db } from "../firebase";
 
 function Posts() {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(
+    () =>
+      onSnapshot(
+        query(collection(db, "posts"), orderBy("timestamp", "desc")),
+        (snapshot) => {
+          setPosts(snapshot.docs);
+        }
+      ),
+    // return () => {
+    //   unsubscribe();
+    // };
+    [db]
+  );
+
+  console.log(posts);
+
   return (
     <div>
       {posts.map((post) => (
         <Post
           key={post.id}
           id={post.id}
-          username={post.username}
-          userImg={post.userImg}
-          img={post.img}
-          caption={post.captions}
+          username={post.data().username}
+          userImg={post.data().profileImg}
+          img={post.data().image}
+          caption={post.data().caption}
         />
+        
       ))}
     </div>
   );

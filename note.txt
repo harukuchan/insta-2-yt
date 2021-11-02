@@ -1,0 +1,8 @@
+rồi bật cái nào
+ c??
+ái await mà chạy rùi
+giờ anh Hải nói sao nó chạy
+ý là đừng có viết như v, bị promise hel
+dùng cái chaining của promise ấy
+Bên modal.js ấyấy
+line 47
