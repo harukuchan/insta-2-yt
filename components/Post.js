@@ -6,24 +6,29 @@ import {
   HeartIcon,
   PaperAirplaneIcon,
 } from "@heroicons/react/outline";
-import useSWR from "swr";
 import { HeartIcon as HeartIconFilled } from "@heroicons/react/solid";
 import {
   addDoc,
   collection,
+  deleteDoc,
+  doc,
   onSnapshot,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { useSession } from "next-auth/react";
 import { useState, useEffect } from "react";
 import { db } from "../firebase";
+import Moment from "react-moment";
 
 function Post({ id, username, userImg, img, caption }) {
   const { data: session } = useSession();
-  const [comment, setComment] = useState("");
-  const [comments, setComments] = useState([]);
+  const [comment, setComment] = useState(""); // comment type in client
+  const [comments, setComments] = useState([]); // comment in server rederring
+  const [likes, setLikes] = useState([]);
+  const [hasLiked, setHasLiked] = useState(false);
 
   useEffect(
     () =>
@@ -34,9 +39,32 @@ function Post({ id, username, userImg, img, caption }) {
         ),
         (snapshot) => setComments(snapshot.docs)
       ),
-    [db]
+    [db, id]
+  ); // reload when db changed
+
+  useEffect(
+    () =>
+      onSnapshot(collection(db, "posts", id, "likes"), (snapshot) =>
+        setLikes(snapshot.docs)
+      ),
+    [db, id]
   );
 
+  useEffect(() => {
+    setHasLiked(
+      likes.indexOf((like) => like.id === session?.user?.uid) !== -1
+    );
+  }, [likes]);
+
+  const likePost = async () => {
+    if (hasLiked) {
+      await deleteDoc(doc(db, "posts", id, "likes", session.user.uid));
+    } else {
+      await setDoc(doc(db, "posts", id, "like", session.user.uid), {
+        username: session.user.username,
+      });
+    }
+  };
   const sendComment = async (e) => {
     e.preventDefault(); // Prevent
     const commentToSend = comment;
@@ -49,7 +77,9 @@ function Post({ id, username, userImg, img, caption }) {
       timestamp: serverTimestamp(),
     });
   };
-  console.log(comments);
+  // console.log(comments);
+  console.log(hasLiked);
+  console.log();
 
   return (
     <div className="bg-white my-7 border rounded-sm">
@@ -72,7 +102,7 @@ function Post({ id, username, userImg, img, caption }) {
       {session && (
         <div className="flex justify-between px-4 pt-4">
           <div className="flex space-x-4">
-            <HeartIcon className="btn" />
+            <HeartIcon onClick={likePost} className="btn" />
             <ChatIcon className="btn" />
             <PaperAirplaneIcon className="btn" />
           </div>
@@ -107,7 +137,9 @@ function Post({ id, username, userImg, img, caption }) {
                 <span className="font-bold">{comment.data().username}</span>{" "}
                 {comment.data().comment}
               </p>
-
+              <Moment fromNow className="pr-5 text-xs">
+                {comment.data().timestamp?.toDate()}
+              </Moment>
             </div>
           ))}
         </div>
